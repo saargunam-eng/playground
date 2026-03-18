@@ -1,63 +1,91 @@
-Scenario: "Saint John": what is writing to this log file?
+# Saint John: Find and stop the process writing to `/var/log/bad.log`
 
-Level: Easy
+## 🧩 Scenario
+A developer created a test program that continuously writes to `/var/log/bad.log`, causing the disk to fill up. The program is no longer needed.
 
-Description: A developer created a testing program that is continuously writing to a log file /var/log/bad.log and filling up disk. You can check for example with tail -f /var/log/bad.log.
-This program is no longer needed. Find it and terminate it. Do not delete the log file.
+> ✅ Goal: Identify the process writing to `/var/log/bad.log` and terminate it.
+> 
+> ⚠️ Do **not** delete the log file.
 
-Test: The log file size doesn't change (within a time interval bigger than the rate of change of the log file).
+## 🧪 Test Condition
+The solution is valid when the size of `/var/log/bad.log` stops growing (observe for a duration longer than the file's write frequency).
 
-The "Check My Solution" button runs the script /home/admin/agent/check.sh, which you can see and execute.
+The check script is at:
 
-Time to Solve: 10 minutes.
-
-OS: Debian 11
-
-Root (sudo) Access: Yes
-
-
-
-Solution:
-
-To solve the "Saint John" scenario and stop the process filling up your disk, you need to identify which program is actively writing to /var/log/bad.log and then terminate it. 
-Step-by-Step Solution
-Identify the Process
-Use the lsof (List Open Files) command to see which process has the file open for writing. Run this with sudo to ensure you see all system processes:
-bash
-sudo lsof /var/log/bad.log
-Use code with caution.
-
-Alternatively, you can use fuser to get the Process ID (PID) directly:
-bash
-sudo fuser /var/log/bad.log
-Use code with caution.
-
-Note the PID (Process ID) and the COMMAND name from the output.
-Verify the Process (Optional)
-To be sure you're killing the right thing, you can check the details of that PID:
-bash
-ps -fp <PID>
-Use code with caution.
-
-Terminate the Process
-Once you have the PID, stop the program. Start with a standard termination signal:
-bash
-sudo kill <PID>
-Use code with caution.
-
-If it doesn't stop immediately (check with tail -f /var/log/bad.log to see if new lines are still appearing), use a forceful kill:
-bash
-sudo kill -9 <PID>
-Use code with caution.
-
-Verify the Solution
-The file size should now remain constant. You can verify this by running the provided check script:
-bash
+```sh
 sudo /home/admin/agent/check.sh
-Use code with caution.
+```
 
- 
-Quick Command Summary
-If you want to do it in one go (assuming fuser is installed):
-bash
+## 🛠️ Prerequisites
+- OS: Debian 11
+- You have root (sudo) access
+
+---
+
+## ✅ Step-by-step Solution
+
+### 1) Identify which process is writing to the log
+
+#### Option A: `lsof`
+
+```sh
+sudo lsof /var/log/bad.log
+```
+
+Look for the process ID (PID) and the command that has the file open.
+
+#### Option B: `fuser`
+
+```sh
+sudo fuser /var/log/bad.log
+```
+
+This prints the PID(s) of processes using the file.
+
+---
+
+### 2) (Optional) Verify the process is the right one
+
+```sh
+ps -fp <PID>
+```
+
+Replace `<PID>` with the process ID you found.
+
+---
+
+### 3) Terminate the process
+
+Start with a polite termination:
+
+```sh
+sudo kill <PID>
+```
+
+If the process does not stop, use a forceful kill:
+
+```sh
+sudo kill -9 <PID>
+```
+
+> Tip: Use `tail -f /var/log/bad.log` while you kill it to confirm writes stop.
+
+---
+
+## ✅ Verify the fix
+
+Confirm the log file size stabilizes. Then run the provided check script:
+
+```sh
+sudo /home/admin/agent/check.sh
+```
+
+---
+
+## 🧰 Quick command (one-liner)
+
+If you want to kill any process using the file in one go (requires `fuser`):
+
+```sh
 sudo fuser -k /var/log/bad.log
+```
